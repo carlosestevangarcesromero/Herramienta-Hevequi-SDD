@@ -29,8 +29,8 @@
    Copia estos dos datos de Supabase > Project Settings > API.
    La clave "publishable" (o "anon") es pública y puede ir aquí.
    NUNCA pongas aquí la clave "secret" ni "service_role". */
-const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
-const SUPABASE_CLAVE_PUBLICA = 'TU_CLAVE_PUBLICA';
+const SUPABASE_URL = 'https://icaqcpvdzruzqhkbwyrd.supabase.co';
+const SUPABASE_CLAVE_PUBLICA = 'sb_publishable_kr_vzPgVsmT2jdijP1N8vA_ti0YnumP';
 
 const configurado = !SUPABASE_URL.includes('TU-PROYECTO') && !SUPABASE_CLAVE_PUBLICA.startsWith('TU_');
 const bd = configurado ? supabase.createClient(SUPABASE_URL, SUPABASE_CLAVE_PUBLICA) : null;
