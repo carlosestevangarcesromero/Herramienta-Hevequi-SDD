@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Control de bodega Hevequi</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Única librería aprobada: supabase-js (base de datos e ingreso con Google) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- ===================== PANTALLA DE INGRESO ===================== -->
+  <section id="pantalla-ingreso" class="ingreso">
+    <div class="ingreso-caja">
+      <h1>Control de bodega</h1>
+      <p class="ingreso-empresa">Hevequi · Valle INN</p>
+      <p>Ingresa con la cuenta de Google que el Coordinador registró.</p>
+      <button id="btn-google" class="btn btn-primario btn-grande" type="button">Ingresar con Google</button>
+      <p id="ingreso-mensaje" class="mensaje" role="alert" hidden></p>
+    </div>
+  </section>
+
+  <!-- ===================== APLICACIÓN ===================== -->
+  <div id="app" hidden>
+
+    <header class="cabecera">
+      <button id="btn-menu" class="btn btn-claro solo-celular" type="button" aria-expanded="false" aria-controls="menu">Menú</button>
+      <span class="cabecera-titulo">Control de bodega</span>
+      <span class="cabecera-usuario">
+        <span id="usuario-nombre"></span>
+        <span id="usuario-rol" class="rol"></span>
+      </span>
+      <button id="btn-salir" class="btn btn-claro" type="button">Salir</button>
+    </header>
+
+    <div class="cuerpo">
+      <!-- Menú: cada enlace dice qué roles lo ven (data-roles) -->
+      <nav id="menu" class="menu" aria-label="Menú principal">
+        <div class="grupo-menu">
+          <p class="grupo-titulo">Operación</p>
+          <button type="button" data-vista="ordenes"    data-roles="comprador coordinador">Órdenes de compra</button>
+          <button type="button" data-vista="qr"         data-roles="comprador coordinador">QR de la orden</button>
+          <button type="button" data-vista="recepcion"  data-roles="supervisor">Recepción</button>
+          <button type="button" data-vista="validacion" data-roles="auxiliar">Validación municipal</button>
+          <button type="button" data-vista="salida"     data-roles="supervisor coordinador">Salida</button>
+        </div>
+        <div class="grupo-menu">
+          <p class="grupo-titulo">Control</p>
+          <button type="button" data-vista="tablero"    data-roles="coordinador supervisor">Tablero y cuadre</button>
+          <button type="button" data-vista="historial"  data-roles="coordinador supervisor auxiliar comprador">Historial del ítem</button>
+        </div>
+        <div class="grupo-menu">
+          <p class="grupo-titulo">Administración</p>
+          <button type="button" data-vista="usuarios"   data-roles="coordinador">Usuarios y auditoría</button>
+        </div>
+      </nav>
+
+      <main class="contenido">
+
+        <!-- Franja de resultado: verde si salió bien, roja si hay un problema -->
+        <div id="franja" class="franja" role="status" aria-live="polite" hidden></div>
+
+        <!-- ========== 1. ÓRDENES DE COMPRA (FL-03) ========== -->
+        <section class="vista" id="vista-ordenes" hidden>
+          <h2>Órdenes de compra</h2>
+
+          <form id="form-orden" class="tarjeta" autocomplete="off">
+            <h3>Crear orden</h3>
+            <div class="fila-campos">
+              <label>Número de OC
+                <input id="oc-numero" required maxlength="40">
+              </label>
+              <label>Proveedor
+                <select id="oc-proveedor" required></select>
+              </label>
+              <label>Fecha
+                <input id="oc-fecha" type="date" required>
+              </label>
+            </div>
+            <details class="nuevo-proveedor">
+              <summary>El proveedor no está en la lista</summary>
+              <div class="fila-campos">
+                <label>Nombre del proveedor <input id="prov-nombre" maxlength="120"></label>
+                <button id="btn-proveedor" class="btn" type="button">Agregar proveedor</button>
+              </div>
+            </details>
+
+            <h4>Ítems de la orden <span class="nota">(se genera un QR por ítem)</span></h4>
+            <div class="tabla-envoltura">
+              <table class="tabla">
+                <thead><tr><th>Producto</th><th>Descripción</th><th>Municipio</th><th>Beneficiario</th><th></th></tr></thead>
+                <tbody id="oc-items"></tbody>
+              </table>
+            </div>
+            <div class="acciones">
+              <button id="btn-agregar-item" class="btn" type="button">Agregar ítem</button>
+              <button class="btn btn-primario" type="submit">Guardar orden</button>
+            </div>
+          </form>
+
+          <h3>Órdenes registradas</h3>
+          <div class="tabla-envoltura">
+            <table class="tabla">
+              <thead><tr><th>OC</th><th>Proveedor</th><th>Fecha</th><th class="num">Ítems</th><th>Comprador</th></tr></thead>
+              <tbody id="lista-ordenes"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========== 2. QR DE LA ORDEN (FL-03) ========== -->
+        <section class="vista" id="vista-qr" hidden>
+          <h2>QR de la orden</h2>
+          <div class="tarjeta fila-campos">
+            <label>Orden de compra
+              <select id="qr-orden"></select>
+            </label>
+            <button id="btn-imprimir-qr" class="btn btn-primario" type="button" disabled>Imprimir QR</button>
+          </div>
+          <p id="qr-resumen" class="nota"></p>
+          <div id="hoja-etiquetas" class="hoja-etiquetas"></div>
+        </section>
+
+        <!-- ========== 3. RECEPCIÓN (FL-04 y FL-07) ========== -->
+        <section class="vista" id="vista-recepcion" hidden>
+          <h2>Recepción</h2>
+          <div class="tarjeta">
+            <label>OC que estás recibiendo <span class="nota">(opcional: si la escribes, se valida que el ítem sea de esa orden)</span>
+              <input id="rec-oc" maxlength="40">
+            </label>
+            <div class="escaner">
+              <button id="rec-camara" class="btn btn-acento btn-grande" type="button">Escanear QR</button>
+              <video id="rec-video" class="video" playsinline muted hidden></video>
+            </div>
+            <form id="rec-form" class="fila-campos" autocomplete="off">
+              <label>O escribe el código
+                <input id="rec-codigo" class="codigo" placeholder="HVQ-..." maxlength="40">
+              </label>
+              <button class="btn" type="submit">Buscar código</button>
+            </form>
+          </div>
+
+          <!-- Se muestra cuando el QR es válido -->
+          <div id="rec-detalle" class="tarjeta" hidden>
+            <h3>Datos del ítem</h3>
+            <dl id="rec-datos" class="datos"></dl>
+            <p>Revisa el producto físicamente y asigna su estado:</p>
+            <label>Motivo u observación
+              <textarea id="rec-motivo" rows="2" maxlength="500"></textarea>
+            </label>
+            <div class="acciones">
+              <button class="btn btn-estado estado-EN_VALIDACION" type="button" data-estado="EN_VALIDACION">Asignar EN VALIDACIÓN</button>
+              <button class="btn btn-estado estado-PNC" type="button" data-estado="PNC">Asignar PNC</button>
+              <button class="btn btn-estado estado-DEVOLUCION" type="button" data-estado="DEVOLUCION">Asignar DEVOLUCIÓN</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 4. VALIDACIÓN MUNICIPAL (FL-05 y FL-08) ========== -->
+        <section class="vista" id="vista-validacion" hidden>
+          <h2>Validación municipal</h2>
+          <div class="tarjeta fila-campos">
+            <label>Municipio
+              <select id="val-municipio"></select>
+            </label>
+            <label>Estado
+              <select id="val-estado">
+                <option value="EN_VALIDACION">EN VALIDACIÓN</option>
+                <option value="PNC">PNC</option>
+                <option value="DEVOLUCION">DEVOLUCIÓN</option>
+              </select>
+            </label>
+            <label>Buscar código o producto
+              <input id="val-buscar" maxlength="60">
+            </label>
+          </div>
+          <div class="tabla-envoltura">
+            <table class="tabla tabla-tarjetas">
+              <thead><tr><th>Código</th><th>Producto</th><th>Municipio</th><th>OC</th><th>Estado</th><th>Cambiar a</th></tr></thead>
+              <tbody id="val-lista"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========== 5. SALIDA (VALIDADO → ENTREGADO) ========== -->
+        <section class="vista" id="vista-salida" hidden>
+          <h2>Salida</h2>
+          <p>Solo sale de la bodega un ítem en estado VALIDADO. El escaneo lo pasa a ENTREGADO.</p>
+          <div class="tarjeta">
+            <div class="escaner">
+              <button id="sal-camara" class="btn btn-acento btn-grande" type="button">Escanear salida</button>
+              <video id="sal-video" class="video" playsinline muted hidden></video>
+            </div>
+            <form id="sal-form" class="fila-campos" autocomplete="off">
+              <label>O escribe el código
+                <input id="sal-codigo" class="codigo" placeholder="HVQ-..." maxlength="40">
+              </label>
+              <label>Observación <span class="nota">(opcional)</span>
+                <input id="sal-obs" maxlength="200">
+              </label>
+              <button class="btn btn-primario" type="submit">Registrar salida</button>
+            </form>
+          </div>
+          <h3>Salidas de esta sesión</h3>
+          <div class="tabla-envoltura">
+            <table class="tabla">
+              <thead><tr><th>Hora</th><th>Código</th><th>Producto</th><th>Resultado</th></tr></thead>
+              <tbody id="sal-lista"><tr><td colspan="4" class="vacio">Escanea el primer ítem para registrar su salida.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========== 6. TABLERO Y CUADRE (FL-06 y FL-09) ========== -->
+        <section class="vista" id="vista-tablero" hidden>
+          <h2>Tablero y cuadre</h2>
+          <form id="tab-filtros" class="tarjeta filtros" autocomplete="off">
+            <label>Municipio <select id="f-municipio"></select></label>
+            <label>OC <select id="f-oc"></select></label>
+            <label>Proveedor <select id="f-proveedor"></select></label>
+            <label>Estado <select id="f-estado"></select></label>
+            <label>Código o producto <input id="f-texto" maxlength="60"></label>
+            <label>Desde <input id="f-desde" type="date"></label>
+            <label>Hasta <input id="f-hasta" type="date"></label>
+            <div class="acciones">
+              <button class="btn btn-primario" type="submit">Ejecutar cuadre</button>
+              <button id="btn-limpiar" class="btn" type="button">Limpiar filtros</button>
+            </div>
+          </form>
+
+          <div id="kpis" class="kpis"></div>
+
+          <h3>Cuadre por municipio y OC</h3>
+          <div class="tabla-envoltura">
+            <table class="tabla">
+              <thead><tr><th>Municipio</th><th>OC</th><th class="num">Esperados</th><th class="num">Recibidos</th><th class="num">Faltantes</th><th class="num">Validados</th><th class="num">Entregados</th><th class="num">PNC</th><th class="num">Devolución</th></tr></thead>
+              <tbody id="cuadre-lista"><tr><td colspan="9" class="vacio">Pulsa <strong>Ejecutar cuadre</strong> para ver los resultados.</td></tr></tbody>
+            </table>
+          </div>
+          <p id="cuadre-sobrantes" class="nota"></p>
+
+          <div class="acciones">
+            <button id="btn-csv" class="btn" type="button" disabled>Exportar a Excel (CSV)</button>
+            <button id="btn-pdf" class="btn" type="button" disabled>Imprimir o guardar PDF</button>
+          </div>
+        </section>
+
+        <!-- ========== 7. HISTORIAL DEL ÍTEM ========== -->
+        <section class="vista" id="vista-historial" hidden>
+          <h2>Historial del ítem</h2>
+          <form id="his-form" class="tarjeta fila-campos" autocomplete="off">
+            <label>Código QR
+              <input id="his-codigo" class="codigo" placeholder="HVQ-..." maxlength="40" required>
+            </label>
+            <button class="btn btn-primario" type="submit">Ver movimientos</button>
+          </form>
+          <dl id="his-datos" class="datos tarjeta" hidden></dl>
+          <div class="tabla-envoltura">
+            <table class="tabla">
+              <thead><tr><th>Fecha y hora</th><th>Antes</th><th>Después</th><th>Usuario</th><th>Origen</th><th>Motivo</th></tr></thead>
+              <tbody id="his-lista"><tr><td colspan="6" class="vacio">Escribe un código para ver su historial.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========== 8. USUARIOS Y AUDITORÍA (FL-10) ========== -->
+        <section class="vista" id="vista-usuarios" hidden>
+          <h2>Usuarios y auditoría</h2>
+          <form id="form-usuario" class="tarjeta" autocomplete="off">
+            <h3>Crear usuario</h3>
+            <div class="fila-campos">
+              <label>Correo de Google <input id="usu-correo" type="email" required maxlength="120"></label>
+              <label>Nombre <input id="usu-nombre" required maxlength="120"></label>
+              <label>Rol
+                <select id="usu-rol" required>
+                  <option value="coordinador">Coordinador</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="auxiliar">Auxiliar</option>
+                  <option value="comprador">Comprador</option>
+                </select>
+              </label>
+            </div>
+            <fieldset id="usu-municipios" class="municipios" hidden>
+              <legend>Municipios del Auxiliar</legend>
+              <div id="usu-municipios-lista"></div>
+            </fieldset>
+            <div class="acciones">
+              <button class="btn btn-primario" type="submit">Crear usuario</button>
+            </div>
+          </form>
+
+          <div class="tarjeta fila-campos">
+            <label>Nuevo municipio <input id="mun-nombre" maxlength="80"></label>
+            <button id="btn-municipio" class="btn" type="button">Agregar municipio</button>
+          </div>
+
+          <h3>Usuarios</h3>
+          <div class="tabla-envoltura">
+            <table class="tabla">
+              <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Municipios</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="usu-lista"></tbody>
+            </table>
+          </div>
+
+          <h3>Auditoría <span class="nota">(últimos 100 cambios)</span></h3>
+          <div class="tabla-envoltura">
+            <table class="tabla">
+              <thead><tr><th>Fecha y hora</th><th>Tabla</th><th>Acción</th><th>Registro</th><th>Usuario</th></tr></thead>
+              <tbody id="aud-lista"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+</body>
+</html>
