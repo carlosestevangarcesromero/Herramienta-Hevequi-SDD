@@ -1,0 +1,296 @@
+/* =========================================================
+   Control de bodega Hevequi — estilos
+   1. Variables (colores y medidas)
+   2. Base
+   3. Ingreso y cabecera
+   4. Menú y contenido
+   5. Componentes (botones, campos, tarjetas, franja, estados)
+   6. Tablas
+   7. Tablero (KPI)
+   8. Etiquetas QR
+   9. Celular
+   10. Impresión
+   ========================================================= */
+
+/* ---------- 1. Variables ---------- */
+:root {
+  /* Paleta base */
+  --texto: #1f2328;          /* grafito */
+  --texto-suave: #57606a;
+  --fondo: #f4f5f7;
+  --blanco: #ffffff;
+  --borde: #8c959f;          /* contraste 3:1 sobre blanco */
+  --primario: #0b5c6b;       /* petróleo: acciones normales */
+  --acento: #b35c00;         /* ámbar: solo Escanear */
+
+  /* Resultado de la franja */
+  --ok-fondo: #dff3e4;   --ok-texto: #0f5323;
+  --error-fondo: #fbe3e3; --error-texto: #8a1c1c;
+
+  /* Un color por estado (siempre acompañado de texto) */
+  --GENERADO: #57606a;
+  --EN_VALIDACION: #9a6700;
+  --VALIDADO: #1a7f37;
+  --PNC: #b42318;
+  --DEVOLUCION: #8250df;
+  --ENTREGADO: #0969da;
+
+  --toque: 44px;             /* alto mínimo táctil (WCAG 2.5.8) */
+  --radio: 6px;
+}
+
+/* ---------- 2. Base ---------- */
+* { box-sizing: border-box; }
+html { font-size: 16px; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--texto);
+  background: var(--fondo);
+  line-height: 1.4;
+}
+h1, h2, h3, h4 { margin: 0 0 .6rem; line-height: 1.2; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.15rem; margin-top: 1.2rem; }
+h4 { font-size: 1rem; margin-top: 1rem; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
+.nota { color: var(--texto-suave); font-size: .9rem; font-weight: normal; }
+.codigo, code, td.cod { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+
+/* ---------- 3. Ingreso y cabecera ---------- */
+.ingreso {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.ingreso-caja {
+  background: var(--blanco);
+  border: 1px solid #d0d7de;
+  border-radius: var(--radio);
+  padding: 2rem;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+.ingreso-empresa { color: var(--texto-suave); margin-top: -.4rem; }
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .5rem 1rem;
+  background: var(--texto);
+  color: var(--blanco);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.cabecera-titulo { font-weight: 700; }
+.cabecera-usuario { margin-left: auto; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.rol {
+  background: var(--blanco);
+  color: var(--texto);
+  border-radius: 999px;
+  padding: .1rem .6rem;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+/* ---------- 4. Menú y contenido ---------- */
+.cuerpo { display: flex; min-height: calc(100vh - 60px); }
+.menu {
+  width: 230px;
+  flex-shrink: 0;
+  background: var(--blanco);
+  border-right: 1px solid #d0d7de;
+  padding: 1rem .5rem;
+}
+.grupo-titulo {
+  margin: .8rem .5rem .3rem;
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+.menu button {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  text-align: left;
+  padding: .5rem .75rem;
+  border: 0;
+  border-radius: var(--radio);
+  background: transparent;
+  font: inherit;
+  color: var(--texto);
+  cursor: pointer;
+}
+.menu button:hover { background: var(--fondo); }
+.menu button.activo { background: var(--primario); color: var(--blanco); font-weight: 700; }
+.contenido { flex: 1; padding: 1.25rem; min-width: 0; }
+.solo-celular { display: none; }
+
+/* ---------- 5. Componentes ---------- */
+.btn {
+  min-height: var(--toque);
+  padding: .5rem 1rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--blanco);
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(.95); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primario { background: var(--primario); border-color: var(--primario); color: var(--blanco); font-weight: 700; }
+.btn-acento   { background: var(--acento);   border-color: var(--acento);   color: var(--blanco); font-weight: 700; }
+.btn-claro    { background: transparent; border-color: var(--blanco); color: var(--blanco); }
+.btn-grande   { min-height: 56px; font-size: 1.1rem; width: 100%; }
+.btn-chico    { min-height: 36px; padding: .25rem .6rem; font-size: .9rem; }
+
+label { display: flex; flex-direction: column; gap: .25rem; font-weight: 600; font-size: .95rem; }
+input, select, textarea {
+  min-height: var(--toque);
+  padding: .5rem .6rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  font: inherit;
+  background: var(--blanco);
+  color: var(--texto);
+  width: 100%;
+}
+textarea { min-height: 64px; resize: vertical; }
+
+.tarjeta {
+  background: var(--blanco);
+  border: 1px solid #d0d7de;
+  border-radius: var(--radio);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.fila-campos { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; }
+.fila-campos > label { flex: 1 1 200px; }
+.acciones { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+.nuevo-proveedor { margin: .75rem 0; }
+.nuevo-proveedor summary { cursor: pointer; color: var(--primario); min-height: var(--toque); display: flex; align-items: center; }
+.municipios { border: 1px solid #d0d7de; border-radius: var(--radio); margin-top: .75rem; }
+.municipios label { flex-direction: row; align-items: center; font-weight: normal; min-height: var(--toque); }
+.municipios input { width: 22px; min-height: 22px; }
+.escaner { margin: .75rem 0; }
+.video { width: 100%; max-width: 480px; margin-top: .5rem; border-radius: var(--radio); background: #000; }
+
+/* Datos del ítem (lista de definición) */
+.datos { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1rem; margin: 0 0 1rem; }
+.datos dt { font-weight: 700; color: var(--texto-suave); }
+.datos dd { margin: 0; }
+
+/* Franja grande de resultado */
+.franja {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radio);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-left: 8px solid;
+}
+.franja.ok    { background: var(--ok-fondo);    color: var(--ok-texto);    border-color: var(--ok-texto); }
+.franja.error { background: var(--error-fondo); color: var(--error-texto); border-color: var(--error-texto); }
+.franja small { display: block; font-weight: normal; font-size: .95rem; margin-top: .25rem; }
+.mensaje { color: var(--error-texto); font-weight: 600; }
+
+/* Etiqueta de estado: color + texto + marcador */
+.estado {
+  display: inline-block;
+  padding: .1rem .55rem;
+  border-radius: 999px;
+  color: var(--blanco);
+  font-size: .85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.estado::before { content: "● "; }
+.estado-GENERADO      { background: var(--GENERADO); }
+.estado-EN_VALIDACION { background: var(--EN_VALIDACION); }
+.estado-VALIDADO      { background: var(--VALIDADO); }
+.estado-PNC           { background: var(--PNC); }
+.estado-DEVOLUCION    { background: var(--DEVOLUCION); }
+.estado-ENTREGADO     { background: var(--ENTREGADO); }
+.btn-estado { color: var(--blanco); font-weight: 700; border: 0; }
+
+/* ---------- 6. Tablas ---------- */
+.tabla-envoltura { overflow-x: auto; background: var(--blanco); border: 1px solid #d0d7de; border-radius: var(--radio); }
+.tabla { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.tabla th, .tabla td { padding: .5rem .6rem; text-align: left; border-bottom: 1px solid #e5e7ea; vertical-align: middle; }
+.tabla thead th { position: sticky; top: 0; background: #eaeef2; font-weight: 700; }
+.tabla tbody tr:nth-child(even) { background: #f8f9fa; }
+.tabla .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tabla td.vacio { text-align: center; color: var(--texto-suave); padding: 1.5rem; }
+.tabla td input, .tabla td select { min-width: 140px; }
+
+/* ---------- 7. Tablero ---------- */
+.filtros { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .75rem; }
+.filtros .acciones { grid-column: 1 / -1; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+.kpi { background: var(--blanco); border: 1px solid #d0d7de; border-radius: var(--radio); padding: .75rem 1rem; }
+.kpi-valor { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi-nombre { color: var(--texto-suave); font-size: .9rem; }
+.kpi.alerta { border-left: 6px solid var(--PNC); }
+
+/* ---------- 8. Etiquetas QR (50 x 25 mm) ---------- */
+.hoja-etiquetas { display: flex; flex-wrap: wrap; gap: 8px; }
+.etiqueta {
+  width: 50mm; height: 25mm;
+  background: var(--blanco);
+  border: 1px dashed var(--borde);
+  display: flex; align-items: center; gap: 2mm;
+  padding: 1.5mm;
+  overflow: hidden;
+  font-size: 7pt; line-height: 1.15;
+}
+.etiqueta svg { width: 22mm; height: 22mm; flex-shrink: 0; }
+.etiqueta strong { font-family: ui-monospace, Consolas, monospace; font-size: 8pt; display: block; }
+
+/* ---------- 9. Celular (hasta 720 px) ---------- */
+@media (max-width: 720px) {
+  .solo-celular { display: inline-block; }
+  .cabecera-titulo { display: none; }
+  .cabecera { flex-wrap: wrap; }
+  .menu {
+    position: fixed; top: 60px; left: 0; bottom: 0;
+    z-index: 9;
+    transform: translateX(-100%);
+    transition: transform .2s;
+    box-shadow: 2px 0 8px rgba(0,0,0,.2);
+    overflow-y: auto;
+  }
+  .menu:not(.abierto) { box-shadow: none; visibility: hidden; }
+  .menu.abierto { transform: translateX(0); }
+  .contenido { padding: 1rem; }
+
+  /* La tabla de validación se ve como tarjetas */
+  .tabla-tarjetas thead { display: none; }
+  .tabla-tarjetas tr { display: block; border-bottom: 2px solid #d0d7de; padding: .5rem 0; }
+  .tabla-tarjetas td { display: flex; justify-content: space-between; gap: .5rem; border: 0; }
+  .tabla-tarjetas td::before { content: attr(data-titulo); font-weight: 700; color: var(--texto-suave); }
+  .datos { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------- 10. Impresión ---------- */
+@page { margin: 8mm; }
+@media print {
+  body { background: var(--blanco); }
+  .cabecera, .menu, .franja, .acciones, .filtros, form, .tarjeta, #btn-imprimir-qr { display: none !important; }
+  .contenido { padding: 0; }
+  /* Al imprimir QR, solo salen las etiquetas */
+  body.imprimiendo-qr .vista:not(#vista-qr) { display: none !important; }
+  body.imprimiendo-qr #vista-qr > :not(.hoja-etiquetas) { display: none !important; }
+  .etiqueta { border: 0; break-inside: avoid; }
+  .tabla-envoltura { overflow: visible; border: 0; }
+  .estado { color: #000; background: none; border: 1px solid #000; }
+}
