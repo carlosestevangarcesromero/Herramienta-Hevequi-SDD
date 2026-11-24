@@ -515,6 +515,14 @@ create policy corregir on items for update to authenticated
 -- usuarios con sesión (authenticated).
 revoke execute on all functions in schema public from public, anon;
 grant  execute on all functions in schema public to authenticated;
+-- Funciones internas (disparadores y registro de incidencias): la app no las llama.
+revoke execute on function auditar() from authenticated;
+revoke execute on function item_creado() from authenticated;
+revoke execute on function registrar_incidencia(tipo_incidencia, text, bigint, text, text) from authenticated;
+-- Funciones de disparador con search_path fijo (recomendación del asesor de seguridad de Supabase).
+alter function item_nace_generado() set search_path = public;
+alter function bloquear_cambios() set search_path = public;
+alter function proteger_estado() set search_path = public;
 
 
 -- ---------------------------------------------------------------------
